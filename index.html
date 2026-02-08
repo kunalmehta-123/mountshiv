@@ -1,1 +1,750 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mount Shiv ❤️</title>
+  <style>
+    :root{
+      --bg1:#fff0f4;
+      --bg2:#ffe2ea;
+      --card:#ffffffcc;
+      --ink:#2a1f2a;
+      --red:#d81b60;
+      --red2:#ff4d7d;
+      --softShadow: 0 18px 60px rgba(0,0,0,.14);
+      --radius: 24px;
+      --danger:#c62828;
+      --ok:#1b5e20;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--ink);
+      background: radial-gradient(1200px 700px at 25% 15%, var(--bg2), var(--bg1));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+
+    /* floating background hearts */
+    .bg-hearts{
+      position:fixed; inset:0; pointer-events:none; opacity:.33;
+      filter: blur(.2px);
+      z-index:0;
+    }
+    .bg-hearts span{
+      position:absolute;
+      font-size:22px;
+      animation: floatUp linear infinite;
+      transform: translateY(110vh);
+      opacity:.9;
+    }
+    @keyframes floatUp{
+      from{ transform: translateY(110vh) translateX(0); }
+      to{ transform: translateY(-20vh) translateX(30px); }
+    }
+
+    .wrap{
+      width:min(980px, 94vw);
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:16px;
+      align-items:stretch;
+      position:relative;
+      z-index:1;
+    }
+    @media (max-width: 860px){
+      .wrap{grid-template-columns: 1fr;}
+    }
+
+    .card{
+      background: var(--card);
+      border:1px solid rgba(255,255,255,.7);
+      border-radius: var(--radius);
+      box-shadow: var(--softShadow);
+      backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+    .pad{padding:18px 20px;}
+
+    h1{
+      margin:0 0 6px;
+      font-size: clamp(24px, 3vw, 34px);
+      letter-spacing:-.02em;
+      font-weight:900;
+      display:flex; align-items:center; gap:10px;
+    }
+    .sub{
+      margin:0 0 12px;
+      line-height:1.35;
+      opacity:.9;
+      font-size: 14.8px;
+    }
+
+    .controls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    button{
+      appearance:none;
+      border:0;
+      cursor:pointer;
+      border-radius: 14px;
+      padding:12px 14px;
+      font-weight:850;
+      transition: transform .12s ease, filter .12s ease;
+      user-select:none;
+    }
+    button:active{transform: translateY(1px) scale(.99);}
+    .primary{
+      background: linear-gradient(135deg, var(--red), var(--red2));
+      color:white;
+      box-shadow: 0 14px 26px rgba(216,27,96,.26);
+    }
+    .ghost{
+      background: rgba(0,0,0,.06);
+      color: var(--ink);
+      border:1px solid rgba(0,0,0,.08);
+    }
+
+    /* HUD */
+    .hud{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin: 10px 0 0;
+    }
+    .stat{
+      background: rgba(255,255,255,.78);
+      border:1px solid rgba(0,0,0,.06);
+      border-radius: 999px;
+      padding:8px 12px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-weight:850;
+      box-shadow: 0 10px 26px rgba(0,0,0,.08);
+      font-size: 14px;
+    }
+    .stat small{opacity:.7; font-weight:800}
+    .progress{
+      width:min(340px, 100%);
+      height:10px;
+      border-radius: 999px;
+      background: rgba(216,27,96,.14);
+      border:1px solid rgba(216,27,96,.18);
+      overflow:hidden;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,.06);
+    }
+    .bar{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(216,27,96,.9), rgba(255,77,125,.9));
+      border-radius: 999px;
+      transition: width .18s ease;
+    }
+
+    /* game area */
+    .arena{
+      position:relative;
+      height: 520px;
+      margin-top:14px;
+      border-radius: 18px;
+      background: radial-gradient(900px 450px at 50% 0%, #fff, rgba(255,255,255,.65));
+      border:1px solid rgba(0,0,0,.06);
+      overflow:hidden;
+      touch-action: manipulation;
+    }
+    @media (max-width: 860px){
+      .arena{height: 560px;}
+    }
+    .arena::after{
+      content:"";
+      position:absolute; inset:0;
+      background: radial-gradient(800px 400px at 50% 15%, rgba(255,255,255,.0), rgba(216,27,96,.06));
+      pointer-events:none;
+    }
+
+    /* falling item */
+    .item{
+      position:absolute;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+      transform: translate(-50%, -50%);
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .emoji{
+      font-size: 44px;
+      line-height:1;
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,.14));
+    }
+    .label{
+      font-size: 12.5px;
+      font-weight: 900;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.78);
+      border: 1px solid rgba(0,0,0,.08);
+      box-shadow: 0 10px 18px rgba(0,0,0,.09);
+      max-width: 210px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .label.green{
+      border-color: rgba(27,94,32,.18);
+      background: rgba(232,245,233,.82);
+    }
+    .label.red{
+      border-color: rgba(198,40,40,.18);
+      background: rgba(255,235,238,.82);
+    }
+
+    /* feedback toast */
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:24px;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,.92);
+      border:1px solid rgba(0,0,0,.08);
+      box-shadow: 0 18px 50px rgba(0,0,0,.18);
+      padding: 12px 14px;
+      border-radius: 16px;
+      font-weight: 900;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      z-index: 50;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .18s ease, transform .18s ease;
+      max-width: min(520px, 92vw);
+    }
+    .toast.show{
+      opacity:1;
+      transform: translateX(-50%) translateY(-6px);
+    }
+    .toast .mini{
+      width:10px; height:10px; border-radius:50%;
+      background: rgba(216,27,96,.55);
+      box-shadow: 0 0 0 6px rgba(216,27,96,.12);
+      flex: 0 0 auto;
+    }
+
+    /* +1 near counter */
+    .plusOne{
+      position:absolute;
+      top:-10px;
+      right: -6px;
+      font-weight: 950;
+      color: rgba(27,94,32,.92);
+      opacity:0;
+      transform: translateY(10px);
+      transition: opacity .18s ease, transform .18s ease;
+      pointer-events:none;
+    }
+    .plusOne.show{
+      opacity:1;
+      transform: translateY(-2px);
+    }
+
+    /* popup */
+    .overlay{
+      position:fixed; inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background: rgba(15,10,15,.25);
+      backdrop-filter: blur(8px);
+      z-index: 80;
+      padding:18px;
+    }
+    .modal{
+      width:min(560px, 94vw);
+      background: rgba(255,255,255,.92);
+      border:1px solid rgba(255,255,255,.7);
+      border-radius: 26px;
+      box-shadow: var(--softShadow);
+      padding: 18px 18px 16px;
+      position:relative;
+      overflow:hidden;
+    }
+    .modal h2{
+      margin:8px 0 10px;
+      font-size: 26px;
+      letter-spacing:-.02em;
+    }
+    .modal p{margin:0 0 12px; opacity:.92; line-height:1.45; font-weight:650;}
+    .modal .btns{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; align-items:center;}
+
+    /* confetti hearts */
+    .confetti{
+      position:fixed; inset:0; pointer-events:none; z-index:90;
+      overflow:hidden;
+      display:none;
+    }
+    .confetti i{
+      position:absolute;
+      top:-10vh;
+      font-style:normal;
+      will-change: transform;
+      animation: fall linear forwards;
+      opacity:.95;
+    }
+    @keyframes fall{
+      to{ transform: translateY(120vh) rotate(360deg); opacity: 1; }
+    }
+
+    /* right panel */
+    .big{
+      font-size: clamp(16px, 2.1vw, 20px);
+      font-weight: 950;
+      margin: 0 0 8px;
+    }
+    .list{
+      margin: 10px 0 0;
+      padding: 0;
+      list-style:none;
+      display:grid;
+      gap:10px;
+    }
+    .list li{
+      background: rgba(255,255,255,.72);
+      border:1px solid rgba(0,0,0,.06);
+      border-radius: 16px;
+      padding: 12px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      line-height:1.35;
+      font-weight:650;
+    }
+    .badge{
+      width:30px; height:30px;
+      display:grid; place-items:center;
+      border-radius: 10px;
+      background: rgba(216,27,96,.14);
+      border:1px solid rgba(216,27,96,.22);
+      font-weight:950;
+      flex:0 0 auto;
+    }
+    .note{
+      font-size: 13px;
+      opacity:.86;
+      margin: 12px 0 0;
+      line-height:1.45;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-hearts" aria-hidden="true" id="bgHearts"></div>
+
+  <div class="wrap">
+    <section class="card">
+      <div class="pad">
+        <h1>Mount Shiv <span aria-hidden="true">❤️</span></h1>
+        <p class="sub">Click the green flags. Avoid the red ones. First to 10 wins a surprise.</p>
+
+        <div class="hud">
+          <div class="stat" style="position:relative;">
+            <span>💚</span>
+            <span id="count">0</span><small>/ 10</small>
+            <span class="plusOne" id="plusOne">+1</span>
+          </div>
+
+          <div class="progress" aria-label="progress">
+            <div class="bar" id="bar"></div>
+          </div>
+
+          <div class="controls">
+            <button class="primary" id="startBtn" type="button">Start</button>
+            <button class="ghost" id="resetBtn" type="button">Reset</button>
+          </div>
+        </div>
+
+        <div class="arena" id="arena" aria-label="game area"></div>
+
+        <p class="note">
+          Tip: It gets a tiny bit faster after 6 💚. (But it’s still very winnable.)
+        </p>
+      </div>
+    </section>
+
+    <aside class="card">
+      <div class="pad">
+        <p class="big">How to play</p>
+        <ul class="list">
+          <li><span class="badge">1</span><div>Tap the <b>💚</b> hearts as they fall.</div></li>
+          <li><span class="badge">2</span><div>Avoid the <b>🚩</b> flags (they’re not you 😭).</div></li>
+          <li><span class="badge">3</span><div>Get to <b>10</b> to unlock the surprise.</div></li>
+        </ul>
+
+        <p class="note">
+          Built for phones too — big tap targets, soft visuals, and no stressful penalties.
+        </p>
+      </div>
+    </aside>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="mini" aria-hidden="true"></span>
+    <span id="toastText">come on man, thats not me!</span>
+  </div>
+
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="askTitle">
+      <div style="font-size:40px; line-height:1;">💌💞</div>
+      <h2 id="askTitle">Shivani… will you be my Valentine? ❤️</h2>
+      <p>I’ll bring the Philz. You bring the “I’m just a baby” voice 🥹</p>
+      <div class="btns">
+        <button class="primary" id="yesBtn" type="button">Yes ❤️</button>
+        <button class="ghost" id="obvBtn" type="button">Obviously 🙄❤️</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
+
+  <script>
+    /**********************
+     * Customize labels here
+     **********************/
+    const GREEN_LABELS = [
+      "Philz",
+      "Aritzia boyfriend corner",
+      "Ice cream",
+      "Sephora",
+      "Rummy",
+      "Buldak",
+      "LOJ",
+      "Jelly cats",
+      "“I’m just a baby”",
+      "SF → Cupertino → MV drive"
+    ];
+
+    const RED_LABELS = [
+      "Not paying for nails",
+      "Not paying on first date",
+      "Nilesh",
+      "You walking road-side",
+      "Rohit",
+      "Ciceros > NY Pizza",
+      "Running away in Vegas",
+      "Always late",
+      "PIP",
+      "Moving to NY"
+    ];
+
+    const TARGET = 10;
+
+    const MSG_RED = "come on man, thats not me!";
+    const MSG_GREEN = [
+      "Okay green flag 😌",
+      "That’s you 💚",
+      "Elite ✅",
+      "Correct 🥹"
+    ];
+
+    /**********************
+     * Elements
+     **********************/
+    const arena = document.getElementById("arena");
+    const startBtn = document.getElementById("startBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const countEl = document.getElementById("count");
+    const barEl = document.getElementById("bar");
+    const toast = document.getElementById("toast");
+    const toastText = document.getElementById("toastText");
+    const plusOne = document.getElementById("plusOne");
+
+    const overlay = document.getElementById("overlay");
+    const yesBtn = document.getElementById("yesBtn");
+    const obvBtn = document.getElementById("obvBtn");
+    const confetti = document.getElementById("confetti");
+
+    /**********************
+     * Background hearts
+     **********************/
+    const bg = document.getElementById("bgHearts");
+    for (let i=0;i<18;i++){
+      const s=document.createElement("span");
+      s.textContent = (i%3===0) ? "❤️" : (i%3===1) ? "💗" : "💖";
+      s.style.left = Math.random()*100 + "vw";
+      s.style.animationDuration = (10 + Math.random()*10) + "s";
+      s.style.animationDelay = (-Math.random()*14) + "s";
+      s.style.fontSize = (18 + Math.random()*18) + "px";
+      bg.appendChild(s);
+    }
+
+    /**********************
+     * Game state
+     **********************/
+    let running = false;
+    let raf = null;
+
+    let score = 0;
+    let items = []; // {el, type, x, y, vy, label}
+
+    // tuning for mobile-friendly gameplay
+    const SETTINGS = {
+      spawnPerSec: 2.6,        // base spawn rate
+      redChance: 0.34,         // fraction of red items
+      minVy: 110,              // fall speed range (px/sec)
+      maxVy: 230,
+      speedRampAt: 6,          // start speeding up after this score
+      extraSpeedPerScore: 12,  // speed increase per score after ramp
+      maxItemsOnScreen: 14
+    };
+
+    let lastTs = 0;
+    let spawnAcc = 0;
+
+    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+    function setScore(n){
+      score = clamp(n, 0, TARGET);
+      countEl.textContent = String(score);
+      barEl.style.width = (score / TARGET * 100).toFixed(0) + "%";
+    }
+
+    function showPlusOne(){
+      plusOne.classList.remove("show");
+      // force reflow
+      void plusOne.offsetWidth;
+      plusOne.classList.add("show");
+      setTimeout(()=> plusOne.classList.remove("show"), 260);
+    }
+
+    function showToast(text){
+      toastText.textContent = text;
+      toast.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(()=> toast.classList.remove("show"), 900);
+    }
+
+    function resetGame(){
+      stopGame();
+      // clear items
+      for (const it of items) it.el.remove();
+      items = [];
+      lastTs = 0;
+      spawnAcc = 0;
+      setScore(0);
+      closeOverlay();
+      confetti.style.display = "none";
+    }
+
+    function stopGame(){
+      running = false;
+      if (raf) cancelAnimationFrame(raf);
+      raf = null;
+    }
+
+    function startGame(){
+      if (running) return;
+      running = true;
+      lastTs = 0;
+      raf = requestAnimationFrame(tick);
+    }
+
+    function closeOverlay(){
+      overlay.style.display = "none";
+      overlay.setAttribute("aria-hidden","true");
+    }
+
+    function openOverlay(){
+      overlay.style.display = "flex";
+      overlay.setAttribute("aria-hidden","false");
+    }
+
+    function currentSpeedBoost(){
+      if (score < SETTINGS.speedRampAt) return 0;
+      return (score - SETTINGS.speedRampAt + 1) * SETTINGS.extraSpeedPerScore;
+    }
+
+    function pickLabel(type){
+      if (type === "green"){
+        // rotate through greens so she sees variety
+        return GREEN_LABELS[Math.floor(Math.random() * GREEN_LABELS.length)];
+      } else {
+        return RED_LABELS[Math.floor(Math.random() * RED_LABELS.length)];
+      }
+    }
+
+    function spawnItem(){
+      const rect = arena.getBoundingClientRect();
+      const type = (Math.random() < SETTINGS.redChance) ? "red" : "green";
+      const label = pickLabel(type);
+
+      const el = document.createElement("div");
+      el.className = "item";
+      el.dataset.type = type;
+
+      const emoji = document.createElement("div");
+      emoji.className = "emoji";
+      emoji.textContent = (type === "green") ? "💚" : "🚩";
+
+      const chip = document.createElement("div");
+      chip.className = "label " + (type === "green" ? "green" : "red");
+      chip.textContent = label;
+
+      el.appendChild(emoji);
+      el.appendChild(chip);
+
+      // start position
+      const x = 24 + Math.random() * (rect.width - 48);
+      const y = -20;
+
+      // speed
+      const baseVy = SETTINGS.minVy + Math.random() * (SETTINGS.maxVy - SETTINGS.minVy);
+      const vy = baseVy + currentSpeedBoost();
+
+      // make tap targets generous
+      el.style.left = x + "px";
+      el.style.top  = y + "px";
+
+      // click/tap handling
+      el.addEventListener("pointerdown", (e)=>{
+        e.preventDefault();
+        if (!running) return;
+
+        const t = el.dataset.type;
+        if (t === "green"){
+          setScore(score + 1);
+          showPlusOne();
+          showToast(MSG_GREEN[Math.floor(Math.random()*MSG_GREEN.length)]);
+          popAndRemove(el);
+
+          if (score >= TARGET){
+            win();
+          }
+        } else {
+          // soft response: no harsh penalty
+          showToast(MSG_RED);
+          wiggle(el);
+        }
+      });
+
+      arena.appendChild(el);
+
+      items.push({ el, type, label, x, y, vy });
+
+      // keep screen from getting cluttered
+      if (items.length > SETTINGS.maxItemsOnScreen){
+        const oldest = items.shift();
+        oldest.el.remove();
+      }
+    }
+
+    function popAndRemove(el){
+      el.style.transition = "transform .12s ease, opacity .12s ease";
+      el.style.transform = "translate(-50%, -50%) scale(1.08)";
+      el.style.opacity = "0";
+      setTimeout(()=> {
+        // remove from items array
+        items = items.filter(it => it.el !== el);
+        el.remove();
+      }, 120);
+    }
+
+    function wiggle(el){
+      el.animate(
+        [
+          { transform: "translate(-50%, -50%) rotate(0deg)" },
+          { transform: "translate(-50%, -50%) rotate(-8deg)" },
+          { transform: "translate(-50%, -50%) rotate(8deg)" },
+          { transform: "translate(-50%, -50%) rotate(0deg)" }
+        ],
+        { duration: 240, iterations: 1, easing: "ease-out" }
+      );
+    }
+
+    function tick(ts){
+      if (!running) return;
+
+      if (!lastTs) lastTs = ts;
+      const dt = Math.min(0.033, (ts - lastTs) / 1000);
+      lastTs = ts;
+
+      // spawn logic
+      const rate = SETTINGS.spawnPerSec + (score >= SETTINGS.speedRampAt ? 0.5 : 0);
+      spawnAcc += dt * rate;
+
+      while (spawnAcc >= 1){
+        spawnItem();
+        spawnAcc -= 1;
+      }
+
+      // move items
+      const rect = arena.getBoundingClientRect();
+      for (const it of items){
+        it.y += it.vy * dt;
+        it.el.style.top = it.y + "px";
+      }
+
+      // cleanup off-screen
+      items = items.filter(it => {
+        if (it.y > rect.height + 80){
+          it.el.remove();
+          return false;
+        }
+        return true;
+      });
+
+      raf = requestAnimationFrame(tick);
+    }
+
+    function win(){
+      stopGame();
+      openOverlay();
+    }
+
+    function launchConfetti(){
+      confetti.innerHTML = "";
+      confetti.style.display = "block";
+      const glyphs = ["❤️","💗","💖","✨","🥰","🌸"];
+      const count = 90;
+      for (let i=0;i<count;i++){
+        const el = document.createElement("i");
+        el.textContent = glyphs[Math.floor(Math.random()*glyphs.length)];
+        el.style.left = (Math.random()*100) + "vw";
+        el.style.fontSize = (14 + Math.random()*22) + "px";
+        el.style.animationDuration = (2.2 + Math.random()*2.2) + "s";
+        el.style.animationDelay = (Math.random()*0.25) + "s";
+        confetti.appendChild(el);
+      }
+      setTimeout(()=> confetti.style.display = "none", 4200);
+    }
+
+    function accept(){
+      closeOverlay();
+      launchConfetti();
+      setTimeout(()=>{
+        showToast("Officially my Valentine 😌");
+      }, 250);
+    }
+
+    // buttons
+    startBtn.addEventListener("click", startGame);
+    resetBtn.addEventListener("click", resetGame);
+    yesBtn.addEventListener("click", accept);
+    obvBtn.addEventListener("click", accept);
+
+    // init
+    resetGame();
+  </script>
+</body>
+</html>
 
