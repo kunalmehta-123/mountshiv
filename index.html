@@ -346,6 +346,116 @@
       margin: 12px 0 0;
       line-height:1.45;
     }
+
+    /***********************
+     * ENVELOPE ANIMATION
+     ***********************/
+    .envelope-layer{
+      position:fixed; inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background: rgba(15,10,15,.14);
+      backdrop-filter: blur(6px);
+      z-index: 75; /* below modal (80), above game */
+    }
+    .envelope-layer.show{ display:flex; }
+
+    .envelope{
+      width: 280px;
+      height: 190px;
+      position: relative;
+      transform: translateY(10px) scale(.98);
+      filter: drop-shadow(0 18px 50px rgba(0,0,0,.22));
+    }
+
+    .env-back{
+      position:absolute; inset:0;
+      border-radius: 18px;
+      background: rgba(255,255,255,.92);
+      border:1px solid rgba(0,0,0,.08);
+    }
+
+    .env-front{
+      position:absolute; inset:0;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(255,255,255,.86), rgba(255,255,255,.65));
+      border:1px solid rgba(0,0,0,.06);
+      clip-path: polygon(0 40%, 50% 74%, 100% 40%, 100% 100%, 0 100%);
+    }
+
+    .env-flap{
+      position:absolute; inset:0;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(216,27,96,.22), rgba(255,77,125,.18));
+      border:1px solid rgba(216,27,96,.18);
+      transform-origin: 50% 40%;
+      clip-path: polygon(0 40%, 50% 0%, 100% 40%, 50% 74%);
+    }
+
+    .env-paper{
+      position:absolute;
+      left: 14px; right: 14px;
+      top: 18px;
+      height: 130px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.95);
+      border:1px solid rgba(0,0,0,.06);
+      transform: translateY(34px);
+    }
+
+    .paper-text{
+      position:absolute; inset:0;
+      display:grid; place-items:center;
+      font-size: 40px;
+      opacity:.95;
+    }
+
+    .env-seal{
+      position:absolute;
+      left:50%; top: 104px;
+      transform: translateX(-50%);
+      width: 44px; height: 44px;
+      border-radius: 999px;
+      display:grid; place-items:center;
+      background: rgba(255,255,255,.92);
+      border:1px solid rgba(216,27,96,.22);
+      box-shadow: 0 12px 22px rgba(0,0,0,.14);
+      font-size: 18px;
+    }
+
+    .envelope.popIn{
+      animation: envPopIn .35s ease-out forwards;
+    }
+    @keyframes envPopIn{
+      from{ transform: translateY(22px) scale(.92); opacity:0; }
+      to{ transform: translateY(0) scale(1); opacity:1; }
+    }
+
+    .envelope.open .env-flap{
+      animation: envOpenFlap .55s ease-out forwards;
+    }
+    @keyframes envOpenFlap{
+      from{ transform: rotateX(0deg); }
+      to{ transform: rotateX(170deg); }
+    }
+
+    .envelope.open .env-paper{
+      animation: envPullPaper .55s ease-out forwards;
+    }
+    @keyframes envPullPaper{
+      from{ transform: translateY(34px); }
+      to{ transform: translateY(-18px); }
+    }
+
+    .envelope.send{
+      animation: envSend 1.05s ease-in forwards;
+    }
+    @keyframes envSend{
+      0%{ transform: translateY(0) scale(1); opacity:1; }
+      35%{ transform: translateY(-18px) scale(1.02); opacity:1; }
+      100%{ transform: translateY(-520px) translateX(260px) rotate(14deg) scale(.86); opacity:0; }
+    }
   </style>
 </head>
 <body>
@@ -390,7 +500,6 @@
           <li><span class="badge">2</span><div>Avoid the <b>🚩</b> flags.</div></li>
           <li><span class="badge">3</span><div>Get to <b>10</b> to win the game!</div></li>
         </ul>
-
       </div>
     </aside>
   </div>
@@ -398,6 +507,17 @@
   <div class="toast" id="toast" role="status" aria-live="polite">
     <span class="mini" aria-hidden="true"></span>
     <span id="toastText">come on man, thats not me!</span>
+  </div>
+
+  <!-- Envelope animation layer (NEW) -->
+  <div class="envelope-layer" id="envelopeLayer" aria-hidden="true">
+    <div class="envelope" id="envelope">
+      <div class="env-back"></div>
+      <div class="env-paper"><div class="paper-text">💌</div></div>
+      <div class="env-front"></div>
+      <div class="env-flap"></div>
+      <div class="env-seal">❤️</div>
+    </div>
   </div>
 
   <div class="overlay" id="overlay" aria-hidden="true">
@@ -410,6 +530,8 @@
       </div>
     </div>
   </div>
+
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
 
   <div class="confetti" id="confetti" aria-hidden="true"></div>
 
@@ -470,6 +592,10 @@
     const obvBtn = document.getElementById("obvBtn");
     const confetti = document.getElementById("confetti");
 
+    // Envelope elements (NEW)
+    const envelopeLayer = document.getElementById("envelopeLayer");
+    const envelopeEl = document.getElementById("envelope");
+
     /**********************
      * Background hearts
      **********************/
@@ -517,7 +643,6 @@
 
     function showPlusOne(){
       plusOne.classList.remove("show");
-      // force reflow
       void plusOne.offsetWidth;
       plusOne.classList.add("show");
       setTimeout(()=> plusOne.classList.remove("show"), 260);
@@ -532,7 +657,6 @@
 
     function resetGame(){
       stopGame();
-      // clear items
       for (const it of items) it.el.remove();
       items = [];
       lastTs = 0;
@@ -540,6 +664,12 @@
       setScore(0);
       closeOverlay();
       confetti.style.display = "none";
+
+      // reset envelope (NEW)
+      envelopeLayer.style.display = "none";
+      envelopeLayer.classList.remove("show");
+      envelopeLayer.setAttribute("aria-hidden","true");
+      envelopeEl.className = "envelope";
     }
 
     function stopGame(){
@@ -572,7 +702,6 @@
 
     function pickLabel(type){
       if (type === "green"){
-        // rotate through greens so she sees variety
         return GREEN_LABELS[Math.floor(Math.random() * GREEN_LABELS.length)];
       } else {
         return RED_LABELS[Math.floor(Math.random() * RED_LABELS.length)];
@@ -599,19 +728,15 @@
       el.appendChild(emoji);
       el.appendChild(chip);
 
-      // start position
       const x = 24 + Math.random() * (rect.width - 48);
       const y = -20;
 
-      // speed
       const baseVy = SETTINGS.minVy + Math.random() * (SETTINGS.maxVy - SETTINGS.minVy);
       const vy = baseVy + currentSpeedBoost();
 
-      // make tap targets generous
       el.style.left = x + "px";
       el.style.top  = y + "px";
 
-      // click/tap handling
       el.addEventListener("pointerdown", (e)=>{
         e.preventDefault();
         if (!running) return;
@@ -627,7 +752,6 @@
             win();
           }
         } else {
-          // soft response: no harsh penalty
           showToast(MSG_RED);
           wiggle(el);
         }
@@ -637,7 +761,6 @@
 
       items.push({ el, type, label, x, y, vy });
 
-      // keep screen from getting cluttered
       if (items.length > SETTINGS.maxItemsOnScreen){
         const oldest = items.shift();
         oldest.el.remove();
@@ -649,7 +772,6 @@
       el.style.transform = "translate(-50%, -50%) scale(1.08)";
       el.style.opacity = "0";
       setTimeout(()=> {
-        // remove from items array
         items = items.filter(it => it.el !== el);
         el.remove();
       }, 120);
@@ -674,7 +796,6 @@
       const dt = Math.min(0.033, (ts - lastTs) / 1000);
       lastTs = ts;
 
-      // spawn logic
       const rate = SETTINGS.spawnPerSec + (score >= SETTINGS.speedRampAt ? 0.5 : 0);
       spawnAcc += dt * rate;
 
@@ -683,14 +804,12 @@
         spawnAcc -= 1;
       }
 
-      // move items
       const rect = arena.getBoundingClientRect();
       for (const it of items){
         it.y += it.vy * dt;
         it.el.style.top = it.y + "px";
       }
 
-      // cleanup off-screen
       items = items.filter(it => {
         if (it.y > rect.height + 80){
           it.el.remove();
@@ -702,9 +821,23 @@
       raf = requestAnimationFrame(tick);
     }
 
+    // UPDATED win(): envelope pops + opens, then popup appears
     function win(){
       stopGame();
-      openOverlay();
+
+      envelopeLayer.classList.add("show");
+      envelopeLayer.style.display = "flex";
+      envelopeLayer.setAttribute("aria-hidden","false");
+
+      envelopeEl.className = "envelope popIn";
+
+      setTimeout(() => {
+        envelopeEl.classList.add("open");
+      }, 220);
+
+      setTimeout(() => {
+        openOverlay();
+      }, 900);
     }
 
     function launchConfetti(){
@@ -724,12 +857,28 @@
       setTimeout(()=> confetti.style.display = "none", 4200);
     }
 
+    // UPDATED accept(): envelope sends away while background hearts stay
     function accept(){
       closeOverlay();
-      launchConfetti();
+
+      // close/open state cleanup, then send
+      envelopeEl.classList.remove("open");
+      envelopeEl.classList.add("send");
+
+      setTimeout(() => {
+        launchConfetti();
+      }, 220);
+
+      setTimeout(() => {
+        envelopeLayer.style.display = "none";
+        envelopeLayer.classList.remove("show");
+        envelopeLayer.setAttribute("aria-hidden","true");
+        envelopeEl.className = "envelope";
+      }, 1200);
+
       setTimeout(()=>{
         showToast("Officially my Valentine 😌");
-      }, 250);
+      }, 650);
     }
 
     // buttons
@@ -743,4 +892,3 @@
   </script>
 </body>
 </html>
-
